@@ -270,7 +270,7 @@ return (function(ria)
 					pcall(function() tweenService:Create(progressbar2, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {BackgroundColor3 = Color3.fromRGB(42, 6, 103)}):Play() end)
 				end)
 			end
-			local offset = (tasknum <= 0 and 1335 or 1335 / tasknum)
+			local offset = (tasknum <= 0 and 700 or 700 / tasknum)
 			pcall(function() tweenService:Create(progressbar2, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {Size = UDim2.new(0, offset, 0, 45)}):Play() end)
 			tasknum = (tasknum - 1)
 		end 
