@@ -2,6 +2,7 @@ return (function(ria)
 	local tweenService = game:GetService('TweenService')
 	local httpService = game:GetService('HttpService')
 	local maingui = Instance.new('ScreenGui') 
+	maingui.Name = "MainWindow"
 	local arceus = ((identifyexecutor and identifyexecutor() or getexecutorname and getexecutorname() or 'Unknown') == 'Arceus X')
     local httprequest = (http and http.request or http_request or fluxus and fluxus.request or request or function() end)
 	local initiate
@@ -177,7 +178,7 @@ return (function(ria)
 	progressbk.Parent = maingui
 	progressbk.Visible = false
 
-	local screenResolution = game.Players.LocalPlayer.PlayerGui:WaitForChild("ScreenGui").AbsoluteSize
+	local screenResolution = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainWindow").AbsoluteSize
 	
 	local progressbar = Instance.new('Frame')
 	progressbar.Name = 'Progress Bar'
