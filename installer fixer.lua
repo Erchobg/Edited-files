@@ -1,8 +1,11 @@
 return (function(ria) 
-	print("updated")
+	for 1, 10 do
+	print("updated2222")
+	end
 	local tweenService = game:GetService('TweenService')
 	local httpService = game:GetService('HttpService')
 	local maingui = Instance.new('ScreenGui') 
+	maingui.Parent = game.Players.LocalPlayer.PlayerGui
 	maingui.Name = "MainWindow"
 	local arceus = ((identifyexecutor and identifyexecutor() or getexecutorname and getexecutorname() or 'Unknown') == 'Arceus X')
     local httprequest = (http and http.request or http_request or fluxus and fluxus.request or request or function() end)
