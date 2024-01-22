@@ -178,7 +178,7 @@ return (function(ria)
 	progressbk.Parent = maingui
 	progressbk.Visible = false
 
-	local screenResolution = game.Players.LocalPlayer.CoreGui:WaitForChild("MainWindow").AbsoluteSize
+	local screenResolution = maingui.AbsoluteSize
 	
 	local progressbar = Instance.new('Frame')
 	progressbar.Name = 'Progress Bar'
