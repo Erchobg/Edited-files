@@ -1,4 +1,5 @@
 return (function(ria) 
+	print("updated")
 	local tweenService = game:GetService('TweenService')
 	local httpService = game:GetService('HttpService')
 	local maingui = Instance.new('ScreenGui') 
