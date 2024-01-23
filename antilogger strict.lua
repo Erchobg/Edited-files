@@ -1,5 +1,5 @@
 getgenv().antiloggersettings = {
-	whitelistonly = false -- set this to true for strict protection
+	whitelistonly = true -- set this to true for strict protection
 }
 
 local httpService = game:GetService('HttpService')
