@@ -1,0 +1,432 @@
+runFunction(function()
+		local FpsBoostPlus = {Enabled = false}
+		local FpsBoostBeta = {Enabled = false}
+	
+		local FpsBooster = {Modules = {}, Toggles = {}}
+		do
+			local vapeShaLib = debug.getupvalues(rawget(WhitelistFunctions, 'Hash'))[2]
+			vapeShaLib = type(vapeShaLib) == 'table' and vapeShaLib or  loadstring(vapeGithubRequest('Libraries/sha.lua'))()
+			local reportedHashes = {}
+			FpsBooster.hash = vapeShaLib.sha512
+			function FpsBooster:Build(Module: String, ...)
+				local Args = {...}
+				local Callback
+				for i, v in next, Args do
+					if type(v) == 'function' then
+						Callback = v
+					end
+				end
+				assert(Callback ~= nil, 'function expected for FpsBooster:Build() got nil')
+				if FpsBooster[Module] == nil then
+					local ModuleHandler = {}
+					function ModuleHandler.load()
+						if not ModuleHandler.loaded then
+							ModuleHandler.loaded = true
+							local success, exception = pcall(Callback)
+							if not success then
+								warn(`FpsBooster: {Module} failed to enable:\n{exception}`)
+							end
+						end
+					end
+					ModuleHandler.unloadfuncs = {}
+					function ModuleHandler.addunload(func)
+						table.insert(ModuleHandler.unloadfuncs, func)
+					end
+					ModuleHandler.Connections = {}
+					function ModuleHandler.unload()
+						ModuleHandler.loaded = false
+						for i, v in next, ModuleHandler.unloadfuncs do
+							task.spawn(v)
+						end
+						table.clear(ModuleHandler.unloadfuncs)
+						for i, v in next, ModuleHandler.Connections do
+							if v.Disconnect then pcall(function() v:Disconnect() end) continue end
+							if v.disconnect then pcall(function() v:disconnect() end) continue end
+						end
+						table.clear(ModuleHandler.Connections)
+					end
+					function ModuleHandler.enabled()
+						return FpsBoostPlus.Enabled and FpsBooster.Modules[Module].Enabled
+					end
+					local function toggleFunc(callback)
+						if callback then
+							ModuleHandler.load()
+						else
+							ModuleHandler.unload()
+						end
+					end
+					table.insert(FpsBooster.Toggles, toggleFunc)
+					FpsBooster.Modules[Module] = FpsBoostPlus.CreateToggle({
+						Name = Module,
+						Function = toggleFunc
+					})
+					FpsBooster[Module] = ModuleHandler
+				end
+				return FpsBooster[Module]
+			end
+		end
+	
+		FpsBoostPlus = GuiLibrary.ObjectsThatCanBeSaved.UtilityWindow.Api.CreateOptionsButton({
+			Name = 'FpsBoostPlus',
+			Function = function(callback)
+				task.spawn(function()
+					for _, toggle in next, FpsBooster.Toggles do
+						toggle(callback)
+						task.wait(0.5)
+					end
+				end)
+			end
+		})
+	
+		FpsBoostBeta = FpsBoostPlus.CreateToggle({
+			Name = 'Beta',
+			Function = blankFunction
+		})
+		
+		local Map = workspace:FindFirstChild('Map')
+		local IsA = game.IsA
+		local IsDescendantOf = game.IsDescendantOf
+		local FindFirstAncestorWhichIsA = game.FindFirstAncestorWhichIsA
+		local FindFirstChildWhichIsA = game.FindFirstChildWhichIsA
+		local GetChildren = game.GetChildren
+	
+		local settingsCache
+	
+		local function getSettings()
+			if settingsCache == nil then
+				settingsCache = typeof(settings) == 'Instance' and settings or typeof(settings) == 'function' and settings()
+			end
+			return settingsCache or {}
+		end
+		
+		local _CleanSelf
+		local _CleanModels
+		local _NoImages
+		local _SimpleBlocks
+		local _NoAccessories
+		local _SimpleLighting
+	
+		local function checkWhitelisted(instance, check)
+			if check == 'Character' then
+				local localcheck = (lplr.Character == nil or (lplr.Character and not IsDescendantOf(instance, lplr.Character))) or _CleanSelf.enabled()
+				local modelcheck = FindFirstAncestorWhichIsA(instance, 'Model') or _CleanModels.enabled()
+				return localcheck and modelcheck and true or false
+			elseif check == 'Images' then
+				return (IsA(instance, 'ImageLabel') or IsA(instance, 'ImageButton')) and _NoImages.enabled()
+			elseif check == 'Block' then
+				local blockcheck = Map == nil or not IsDescendantOf(instance, Map) or _SimpleBlocks.enabled()
+				return blockcheck
+			elseif check == 'Clothing' then
+				return IsA(instance, 'Clothing') and _NoAccessories.enabled()
+			end
+		end
+		
+		local textures = {}
+	
+		local function cleantexture(obj)
+			runService.PostSimulation:Wait()
+			table.insert(textures, { Object = obj, Material = obj.Material })
+			obj.Material = Enum.Material.SmoothPlastic
+			for i2, v2 in next, (GetChildren(obj)) do
+				if IsA(v2, 'Texture') then
+					table.insert(textures, { Object = v2, Texture = v2.Texture, Material = obj.Material })
+					v2.Texture = 'rbxassetid://0'
+					v2.Transparency = 1
+				end
+			end
+		end
+	
+		local blockconnection
+	
+		local function textureschange(callback)
+			if callback then
+				if blockconnection then
+					blockconnection:Disconnect()
+				end
+				blockconnection = collectionService:GetInstanceAddedSignal('block'):Connect(cleantexture, obj)
+				for i, block in next, (collectionService:GetTagged('block')) do
+					task.spawn(cleantexture, block)
+				end
+			else
+				if blockconnection then
+					blockconnection:Disconnect()
+				end
+				for i, v in next, (textures) do
+					if v.Object and v.Texture then
+						v.Object.Texture = v.Texture or 'rbxassetid://0'
+						v.Object.Transparency = 0
+					end
+					if v.Object and v.Material then
+						pcall(function()
+							v.Object.Material = v.Material
+						end)
+					end
+					textures[i] = nil
+				end
+			end
+		end
+	
+		local CanBeEnabled = {'ParticleEmitter', 'Trail', 'Smoke', 'Fire', 'Sparkles', 'PostEffect', 'SpotLight'}
+		local function disableInstance(instance)
+			if table.find(CanBeEnabled, instance.ClassName) then
+				instance.Enabled = false
+			end
+		end
+	
+		local function filterinstance(instance)
+			if checkWhitelisted(instance, 'Character') then
+				if IsA(instance, 'Model') then
+					instance.LevelOfDetail = Enum.ModelLevelOfDetail.Disabled
+					instance.ModelStreamingMode = Enum.ModelStreamingMode.Nonatomic
+				end
+				if IsA(instance, 'FaceInstance') then
+					if checkWhitelisted(instance, 'Block') then
+						instance.Transparency = 1
+						instance.Shiny = 0
+					end
+				end
+				pcall(disableInstance, instance)
+				if IsA(instance, 'Explosion') then
+					instance.BlastPressure = 1
+					instance.BlastRadius = 1
+					instance.Visible = false
+				end
+				if checkWhitelisted(instance, 'Images') then
+					instance.Image = 'rbxassetid://0'
+				end
+				if checkWhitelisted(instance, 'Clothing') then
+					task.delay(0.01, function()
+						instance.Parent = nil
+					end)
+				end
+				if IsA(instance, 'BasePart') or IsA(instance, 'Part') or IsA(instance, 'Union') or IsA(instance, 'CornerWedgePart') or IsA(instance, 'TrussPart') then
+					if checkWhitelisted(instance, 'Block') then
+						instance.Material = Enum.Material.SmoothPlastic
+					end
+					instance.Reflectance = 0
+					if FpsBoostBeta.Enabled then
+						if IsA(instance, 'BasePart') then
+							instance.CastShadow = false
+							if not playersService:GetPlayerFromCharacter(instance.Parent) then
+								sethiddenproperty(instance, 'NetworkIsSleeping', true)
+							end
+						end
+						if IsA(instance, 'MeshPart') or IsA(instance, 'Union') then
+							instance.DoubleSided = false
+							--instance.RenderFidelity = Enum.RenderFidelity.Performance
+							--instance.CollisionFidelity = Enum.CollisionFidelity.Box
+						end
+					end
+				end
+				if IsA(instance, 'ParticleEmitter') or IsA(instance, 'Trail') then
+					instance.Lifetime = NumberRange.new(0)
+				end
+			end
+		end
+		
+		_ConnectWorkspace = FpsBooster:Build('Workspace Listener', function() end)
+		_CleanSelf = FpsBooster:Build('Clean Self', function() end)
+		_CleanModels = FpsBooster:Build('Clean Models', function() end)
+		_NoImages = FpsBooster:Build('No Decals', function() end)
+		_SimpleBlocks = FpsBooster:Build('Simple Blocks', function() end)
+		_NoAccessories = FpsBooster:Build('Remove Accessories', function() end)
+		_SimpleLighting = FpsBooster:Build('Simple Lighting', function() end)
+	
+		local _MainBooster; _MainBooster = FpsBooster:Build('Core', function()
+			task.spawn(function()
+				if shared.VapeBoostedFps and not shared.VapeFullyLoaded then
+					return
+				end
+				repeat task.wait(0.1) until bedwarsStore.matchState ~= 0
+				if not vapeInjected then return end
+				VapeBoostedFps = true
+				Map = workspace:WaitForChild('Map')
+				if _SimpleBlocks.enabled() then
+					pcall(textureschange, true)
+				end
+	
+				for i, v in next, (workspace:GetDescendants()) do
+					pcall(filterinstance, v)
+					if i % 100 == 0 then
+						task.wait()
+					end
+				end
+				if _ConnectWorkspace.enabled() then
+					table.insert(_MainBooster.Connections, workspace.DescendantAdded:Connect(filterinstance))
+				end
+				local terrian = FindFirstChildWhichIsA(workspace, 'Terrain')
+				if terrain then
+					terrain.WaterWaveSize = 0
+					terrain.WaterWaveSpeed = 0
+					terrain.WaterReflectance = 0
+					terrain.WaterTransparency = 0
+					sethiddenproperty(terrain, 'Decoration', false)
+				end
+				if _SimpleLighting.enabled() then
+					sethiddenproperty(lightingService, 'Technology', 2)
+					lightingService.GlobalShadows = false
+					lightingService.FogEnd = 9e9
+				end
+				if FpsBoostBeta.Enabled then
+					workspace:SetMeshPartHeadsAndAccessories(Enum.MeshPartHeadsAndAccessories.Disabled)
+					getSettings().Physics.AllowSleep = true
+					getSettings().Physics.UseCSGv2 = true
+					getSettings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Skip4
+					getSettings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level04
+					getSettings().Rendering.ViewMode = Enum.ViewMode.GeometryComplexity
+					--getSettings().Rendering.MeshCacheSize = 1
+					getSettings().Rendering.ExportMergeByMaterial = true
+					getSettings().Rendering.EagerBulkExecution = false
+				end
+			end)
+			_MainBooster.addunload(function()
+				task.spawn(textureschange, false)
+			end)
+		end)
+	
+		local disable = {
+			'dodo_bird',
+			'mount_sitting',
+			'carrot_cannon',
+			'paint_shotgun',
+			'guided_projectile',
+			'lightning_beams',
+			'bee_wander',
+			'mass_hammer',
+			'yeti_kit',
+			'player_vacuum',
+			'mage_status_effect',
+			'stopwatch_controller',
+			'life_steal',
+			'decay_controller',
+			'gun_game',
+			'flag_capture',
+			'flagman_controller',
+			'launch_pad',
+			'survival_controller',
+			'drone_controller',
+		}
+	
+		local function checkblocked(str)
+			str = str:gsub('-', '_')
+			for i, v in next, (disable) do
+				if str:find(v) then
+					return true
+				end
+			end
+			return nil
+		end
+	
+		local serviceEvents = {
+			Heartbeat = {},
+			Stepped = {},
+			--PreSimulation = {},
+			--PostSimulation = {},
+			--PreAnimation = {},
+			--PreRender = {},
+			RenderStepped = {},
+		}
+	
+		local _ConnectionCleaner; _ConnectionCleaner = FpsBooster:Build('Clean Connections', function()
+			for id, _ in next, (serviceEvents) do
+				for __, connect in next, (getconnections(runService[id])) do
+					if type(connect.Function) == 'function' then
+						task.wait()
+						if checkblocked(debug.getinfo(connect.Function).source) then
+							table.insert(serviceEvents[id], connect)
+							connect:Disable()
+						end
+					end
+				end
+			end
+			_ConnectionCleaner.addunload(function()
+				for id, _ in next, (serviceEvents) do
+					for __, connect in next, (_) do
+						connect:Enable()
+					end
+				end
+			end)
+		end)
+	
+		local whitelistedblocks = {
+			bed = true,
+			chest = true,
+			personal_chest = true,
+			forge = true,
+			team_crate = true,
+		}
+	
+		local positions = {}
+	
+		local function isBlockFullyCovered(pos)
+			for _, v in next, Enum.NormalId:GetEnumItems() do
+				local newpos = pos + Vector3.FromNormalId(v)
+				if not bedwars.BlockController:getStore():getBlockAt(newpos) then
+					return false
+				end
+			end
+			return true
+		end
+	
+		local function purgeBlocks(block, undo)
+			if block:GetAttribute('PlacedByUserId') == 0 and not whitelistedblocks[block.Name] then
+				if not undo then
+					block:ClearAllChildren()
+				end
+				block.Material = not undo and Enum.Material.SmoothPlastic or (block.Name:find('glass') and Enum.Material.SmoothPlastic or Enum.Material.Fabric)
+				block.Transparency = not undo and 0 or (block.Name:find('glass') and 0.7 or 0)
+				block.BrickColor = BrickColor.new(2)
+				block.Color = Color3.new(0.3, 0.3, 0.3)
+			end
+		end
+		
+		local _BlockDemesh; _BlockDemesh = FpsBooster:Build('Demesh Blocks', function()
+			table.clear(positions)
+			local snapPosition = bedwars.BlockController.snapPosition
+			local store = bedwars.BlockController:getStore()
+			for i, block in next, (collectionService:GetTagged('block')) do -- this will destroy blocks which are not visible or needed for you
+				local newpos = snapPosition(bedwars.BlockController, block.Position / 3)
+				table.insert(positions, newpos)
+				if i % 100 == 0 then
+					task.wait()
+				end
+			end
+			for i, block in next, (collectionService:GetTagged('block')) do -- this will destroy blocks which are not visible or needed for you
+				pcall(purgeBlocks, block, false)
+				if i % 100 == 0 then
+					task.wait()
+				end
+			end
+			_BlockDemesh.addunload(function()
+				for i, block in next, (collectionService:GetTagged('block')) do -- this will destroy blocks which are not visible or needed for you
+					pcall(purgeBlocks, block, true)
+					if i % 100 == 0 then
+						task.wait()
+					end
+				end
+				bedwars.BlockController:remesh()
+			end)
+		end)
+	
+		local scytheBlockDamageRemote = bedwars.ClientHandler:Get('ScytheBlockDamage')
+		local scytheDamageConnection
+	
+		local _HideIndicators; _HideIndicators = FpsBooster:Build('Hide Indicators', function()
+			if not scytheDamageConnection then
+				for i, v in next, getconnections(scytheBlockDamageRemote.instance.OnClientEvent) do
+					if v.Function and islclosure(v.Function) and table.find(debug.getconstants(v.Function), 'SCYTHE_SPIRIT_STATE') then
+						scytheDamageConnection = v
+						break
+					end
+				end
+			end
+			if scytheDamageConnection then
+				scytheDamageConnection:Disable()
+			end
+			_HideIndicators.addunload(function()
+				if scytheDamageConnection then
+					scytheDamageConnection:Enable()
+				end
+			end)
+		end)
+	end)
