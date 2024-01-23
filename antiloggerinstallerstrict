@@ -1,0 +1,36 @@
+local isfile = isfile or function(file)
+    local success, filecontents = pcall(function() return readfile(file) end)
+    return success and type(filecontents) == 'string'
+end 
+
+function downloadthisv1() 
+    local antiloggermodule = game:HttpGet("https://raw.githubusercontent.com/Erchobg/Edited-files/main/antilogger%20strict.lua")
+    task.spawn(function() loadstring(antiloggermodule)() end)
+    writefile('Autoexec/Antilogger')
+end
+
+function downloadthisv2()
+    local antiloggermodule = game:HttpGet("https://raw.githubusercontent.com/Erchobg/Edited-files/main/antilogger%20strict.lua")
+    task.spawn(function() loadstring(antiloggermodule)() end)
+    writefile('autoexc/Antilogger')
+end    
+
+if isfolder("Autoexec") then
+    if isfile("Autoexec/Antilogger") then
+        delfile("Autoexec/Antilogger")
+        wait(1)
+        downloadthisv1()
+    else
+        downloadthisv1()
+    end
+end 
+
+if isfolder("autoexc") then
+    if isfile("autoexc/Antilogger") then
+        delfile("autoexc/Antilogger")
+        wait(1)
+        downloadthisv2()
+    else
+        downloadthisv2()
+    end
+end    
