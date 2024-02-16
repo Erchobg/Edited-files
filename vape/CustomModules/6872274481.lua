@@ -14397,5 +14397,144 @@ runFunction(function()
         end,
         HoverText = "Makes u be invisible"
     })
-    end)
+end)
+
+runFunction(function()
+    local AntiDeath = {Enabled = false}
+	local JumpBoostMode = {Value = "Velocity"}
+    local AntiDeathTrigger = {Value = 50}
+    local AntiDeathVelo = {Value = 35}
+	local AntiDeathCframe = {Value = 35}
+	local AntiDeathTween = {Value = 35}
+    local enabledAlready = false
+    AntiDeath = GuiLibrary.ObjectsThatCanBeSaved.UtilityWindow.Api.CreateOptionsButton({
+        Name = "AntiDeath",
+        HoverText = "Automatically prevents you from dying.",
+        Function = function(callback)
+            if callback then
+                task.spawn(function()
+                    repeat 
+                        task.wait()
+                        if game:GetService("Players").LocalPlayer.Character.Humanoid.Health < AntiDeathTrigger.Value then
+                            warningNotification("AntiDeath", "The current health (" .. game:GetService("Players").LocalPlayer.Character.Humanoid.Health .. ") is lower than the AntiDeath Trigger (" .. AntiDeathTrigger.Value .. ")", 5)
+                            if JumpBoostMode.Value == "Velocity" then
+                                game:GetService("Players").LocalPlayer.Character.PrimaryPart.Velocity = Vector3.new(0, AntiDeathVelo.Value, 0)
+                            elseif JumpBoostMode.Value == "CFrame" then
+                                game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame = Vector3.new(0, AntiDeathCframe.Value, 0)
+                            elseif JumpBoostMode.Value == "Tween" then
+                                local tween = tweenService:Create(character.HumanoidRootPart, TweenInfo.new(JumpBoostTable.Sliders.Tween2), {
+                                    CFrame = character.HumanoidRootPart.CFrame + Vector3.new(0, AntiDeathTween.Value, 0)
+                                })
+                                tween:Play()
+                            elseif JumpBoostMode.Value == "InfiniteFly" then
+                                GuiLibrary.ObjectsThatCanBeSaved.InfiniteFlyOptionsButton.Api.Enabled = true
+                            end
+                        end
+
+                    until not AntiDeath.Enabled
+                end)
+            end
+        end
+    })
+    JumpBoostMode = JumpBoost.CreateDropdown({
+	Name = "Mode",
+		   List = {
+			  "Velocity",
+			  "CFrame",
+			  "Tween",
+			  "InfiniteFly",
+		},
+		HoverText = "Mode to save you",
+		Function = function() end,
+	})
+    AntiDeathTrigger = AntiDeath.CreateSlider({
+        Name = "Health Trigger",
+             Min = 10,
+             Max = 100,
+             Function = function() end,
+             Default = 50
+    })
+    AntiDeathVelo = AntiDeath.CreateSlider({
+        Name = "Velocity",
+             Min = 1,
+             Max = 50,
+             Function = function() end,
+             Default = 35
+    })
+    AntiDeathCframe = AntiDeath.CreateSlider({
+        Name = "Cframe",
+             Min = 1,
+             Max = 50,
+             Function = function() end,
+             Default = 35
+    })
+    AntiDeathTween = AntiDeath.CreateSlider({
+        Name = "Tween",
+             Min = 1,
+             Max = 50,
+             Function = function() end,
+             Default = 35
+       })
+end)
+
+runFunction(function()
+    local hasTeleported = false
+    local TweenService = game:GetService("TweenService")
+    local Players = game:GetService("Players")
+    local lplr = Players.LocalPlayer
+    local function findNearestPlayer()
+        local nearestPlayer = nil
+        local minDistance = math.huge
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= lplr and player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                and player.Team ~= lplr.Team and player.Character:FindFirstChild("Humanoid")
+                and player.Character.Humanoid.Health > 0 then
+                local distance = (player.Character.HumanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
+                if distance < minDistance then
+                    nearestPlayer = player
+                    minDistance = distance
+                end
+            end
+        end
+    return nearestPlayer
+end
+local function tweenToNearestPlayer()
+    local nearestPlayer = findNearestPlayer()
+    if nearestPlayer then
+        local humanoidRootPart = lplr.Character:WaitForChild("HumanoidRootPart")
+        local targetPosition = nearestPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 2, 0)
+        local tweenInfo = TweenInfo.new(TweenSpeed.Value, Enum.EasingStyle.Quad)
+        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+        tween:Play()
+        tween.Completed:Connect(function()
+            hasTeleported = false
+        end)
+    end
+end
+PlayerTp = GuiLibrary.ObjectsThatCanBeSaved.BlatantWindow.Api.CreateOptionsButton({
+	Name = "PlayerTP",
+	Function = function(callback)
+		if callback then
+			    lplr.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Dead)
+			    lplr.CharacterAdded:Connect(function()
+				    wait(0.3)
+				    if not hasTeleported then
+					   hasTeleported = true
+					   tweenToNearestPlayer()
+				    end
+			    end)			
+			    hasTeleported = false
+			    PlayerTp.ToggleButton.(false)
+		    end
+	    end,
+	    HoverText = "Teleports you to the closest player"
+    })
+    TweenSpeed = PlayerTp.CreateSlider({
+       Name = "TweenSpeed",
+             Min = "0",
+             Max = "2",
+             Function = function(val) end,
+         Default = 0
+      })
+end)
 
