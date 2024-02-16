@@ -14334,3 +14334,68 @@ runFunction(function()
     })
 end)
 
+-- custom things start
+local function Invisibility()
+	repeat task.wait() until GetMatchState() ~= 0 and IsAlive(LocalPlayer)
+
+	task.wait(0.3)
+
+	local Animation = Instance.new("Animation")
+	local Id = 11335949902
+
+	Animation.AnimationId = "rbxassetid://".. Id
+
+	local PlayerAnimation = LocalPlayer.Character.Humanoid.Animator:LoadAnimation(Animation)
+
+	if PlayerAnimation then
+		LocalPlayer.Character.Humanoid.CameraOffset = Vector3.new(0, 3 / -2, 0)
+		LocalPlayer.Character.PrimaryPart.Size = Vector3.new(2, 3, 1.1)
+
+		PlayerAnimation.Priority = Enum.AnimationPriority.Action4
+		PlayerAnimation.Looped = false
+
+		LocalPlayer.Character.Humanoid.CameraOffset = Vector3.new(0, 3 / -2, 0)	
+		LocalPlayer.Character.PrimaryPart.Transparency = 0.6
+		LocalPlayer.Character.PrimaryPart.Size = Vector3.new(2, 3, 1.1)
+
+		SetCollisions(false)
+
+		task.spawn(function()
+			repeat
+				task.wait()
+
+				PlayerAnimation:Play(1 / 999999, 999999, 1 / 999999)
+			until Settings.Invisible.Value == false or not IsAlive(LocalPlayer)
+
+			if PlayerAnimation then
+				PlayerAnimation:Destroy()
+			end
+
+			if Animation then
+				Animation:Destroy()
+			end
+
+			if IsAlive(LocalPlayer) then
+				SetCollisions(true)
+
+				LocalPlayer.Character.PrimaryPart.Size = Vector3.new(1.9, 2, 1)
+				LocalPlayer.Character.PrimaryPart.Transparency = 1
+				LocalPlayer.Character.Humanoid.CameraOffset = Vector3.new(0, 0, 0)
+			end
+		end)
+	end
+end
+
+runFunction(function()
+    local invisiblemodule = {Enabled = false}
+    invisiblemodule = GuiLibrary.ObjectsThatCanBeSaved.CombatWindow.Api.CreateOptionsButton({
+        Name = "Invisible",
+        Function = function(callback)
+            if callback then
+				Invisibility()
+            end
+        end,
+        HoverText = "Makes u be invisible"
+    })
+    end)
+
