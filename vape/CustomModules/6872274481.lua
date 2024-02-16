@@ -14407,7 +14407,7 @@ runFunction(function()
 	local AntiDeathCframe = {Value = 35}
 	local AntiDeathTween = {Value = 35}
     local enabledAlready = false
-    AntiDeath = GuiLibrary.ObjectsThatCanBeSaved.UtilityWindow.Api.CreateOptionsButton({
+    AntiDeath = GuiLibrary.ObjectsThatCanBeSaved.CombatWindow.Api.CreateOptionsButton({
         Name = "AntiDeath",
         HoverText = "Automatically prevents you from dying.",
         Function = function(callback)
@@ -14511,7 +14511,7 @@ local function tweenToNearestPlayer()
         end)
     end
 end
-PlayerTp = GuiLibrary.ObjectsThatCanBeSaved.BlatantWindow.Api.CreateOptionsButton({
+PlayerTp = GuiLibrary.ObjectsThatCanBeSaved.CombatWindow.Api.CreateOptionsButton({
 	Name = "PlayerTP",
 	Function = function(callback)
 		if callback then
