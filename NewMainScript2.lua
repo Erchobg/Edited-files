@@ -7,10 +7,10 @@ if shared == nil then
 	getgenv().shared = {} 
 end
 
-if isfile('vape/MainScript.lua') then 
-	loadfile('vape/MainScript.lua')()
+if isfile('vape/NewMainScript.lua') then 
+	loadfile('vape/NewMainScript.lua')()
 else 
-	local mainscript = game:HttpGet('https://raw.githubusercontent.com/SystemXVoid/Render/source/packages/MainScript.lua') 
+	local mainscript = game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua') 
 	task.spawn(function() loadstring(mainscript)() end)
-	writefile('vape/MainScript.lua', mainscript)
+	writefile('vape/NewMainScript.lua', mainscript)
 end
