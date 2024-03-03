@@ -1,1 +1,0 @@
-{"default":{"Keybind":"LeftControl","Selected":true}}
