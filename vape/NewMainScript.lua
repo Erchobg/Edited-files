@@ -1,8 +1,5 @@
--- Voidware Custom Modules Signed File
+-- Voidware Custom Vape Signed File
 local errorPopupShown = false
-if shared == nil then
-	getgenv().shared = {} 
-end
 local setidentity = syn and syn.set_thread_identity or set_thread_identity or setidentity or setthreadidentity or function() end
 local getidentity = syn and syn.get_thread_identity or get_thread_identity or getidentity or getthreadidentity or function() return 8 end
 local isfile = isfile or function(file)
@@ -52,4 +49,5 @@ local function vapeGithubRequest(scripturl)
 	return readfile("vape/"..scripturl)
 end
 
+if not isfile("vape/commithash.txt") then writefile("vape/commithash.txt", "main") end
 return loadstring(vapeGithubRequest("MainScript.lua"))()
