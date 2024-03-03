@@ -1,1 +1,1 @@
-{"default":{"Selected":true,"Keybind":""},"Render White":{"Keybind":""}}
+{"default":{"Keybind":"","Selected":true},"Ghost":{"Keybind":"","Selected":false}}
